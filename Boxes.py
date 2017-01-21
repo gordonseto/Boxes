@@ -27,6 +27,14 @@ class BoxesGame():
 		self.otherplayer = 0
 		self.didiwin = False
 
+		self.owner = [[0 for x in range(6)] for y in range(6)]
+
+		#draw seperators
+		for x in range(7):
+			for y in range(7):
+				self.screen.blit(self.separators, [x*64, y*64])
+
+		
 	def initGraphics(self):
 		self.normallinev = pygame.image.load("normalline.png")
 		self.normallineh = pygame.transform.rotate(pygame.image.load("normalline.png"), -90)
@@ -44,10 +52,6 @@ class BoxesGame():
 		self.gameover = pygame.image.load("gameover.png")
 		self.score_panel = pygame.image.load("score_panel.png")
 
-		#draw seperators
-		for x in range(7):
-			for y in range(7):
-				self.screen.blit(self.separators, [x*64, y*64])
 
 	def drawHUD(self):
 		#draw the background for the bottom:
@@ -92,6 +96,15 @@ class BoxesGame():
 				else:
 					self.screen.blit(self.bar_donev, [(x)*64, (y)*64+5])
 
+	def drawOwnermap(self):
+		for x in range(6):
+			for y in range(6):
+				if self.owner[x][y] != 0:
+					if self.owner[x][y] == "win":
+						self.screen.blit(self.marker, (x*64+5, y*64+5))
+					if self.owner[x][y] == "lose":
+						self.screen.blit(self.othermarker, (x*64+5, y*64+5))
+
 	def update(self):
 		#sleep to make the game 60 fps
 		self.clock.tick(60)
@@ -112,6 +125,14 @@ class BoxesGame():
 
 		#update the screen
 		pygame.display.flip()
+
+	def finished(self):
+		self.screen.blit(self.gameover if not self.didiwin else self.winningscreen, (0,0))
+		while 1:
+			for event in pygame.event.get():
+				if event.type == pygame.QUIT:
+					exit()
+				pygame.display.flip()
 
 	def displayHover(self):
 		mouse = pygame.mouse.get_pos()
