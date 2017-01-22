@@ -1,7 +1,9 @@
 import pygame
 import math
+from PodSixNet.Connection import ConnectionListener, connection
+from time import sleep
 
-class BoxesGame():
+class BoxesGame(ConnectionListener):
 	def __init__(self):
 		pass
 
@@ -34,7 +36,29 @@ class BoxesGame():
 			for y in range(7):
 				self.screen.blit(self.separators, [x*64, y*64])
 
-		
+		self.gameid = None
+		self.num = None
+		self.Connect()
+
+		self.running = False
+		while not self.running:
+			self.Pump()
+			connection.Pump()
+			sleep(0.01)
+
+		#determines attributes from player #
+		if self.num == 0:
+			self.turn = True
+			self.marker = self.greenplayer
+			self.othermarker = self.blueplayer
+		else:
+			self.turn = False
+			self.marker = self.blueplayer
+			self.othermarker = self.greenplayer
+
+		self.justplaced = 10
+
+
 	def initGraphics(self):
 		self.normallinev = pygame.image.load("normalline.png")
 		self.normallineh = pygame.transform.rotate(pygame.image.load("normalline.png"), -90)
@@ -66,7 +90,7 @@ class BoxesGame():
 		#draw surface
 		self.screen.blit(label, (10, 400))
 
-		self.screen.blit(self.greendindicator, (130, 395))
+		self.screen.blit(self.greendindicator if self.turn else self.redindicator, (130, 395))
 
 		myfont64 = pygame.font.SysFont(None, 64)
 		myfont20 = pygame.font.SysFont(None, 20)
@@ -106,6 +130,8 @@ class BoxesGame():
 						self.screen.blit(self.othermarker, (x*64+5, y*64+5))
 
 	def update(self):
+		self.justplaced -= 1
+
 		#sleep to make the game 60 fps
 		self.clock.tick(60)
 
@@ -115,6 +141,7 @@ class BoxesGame():
 		#draw the board
 		self.drawBoard()
 		self.drawHUD()
+		self.drawOwnermap()
 
 		for event in pygame.event.get():
 			#quit if the quit button was pressed
@@ -125,6 +152,9 @@ class BoxesGame():
 
 		#update the screen
 		pygame.display.flip()
+
+		connection.Pump()
+		self.Pump()
 
 	def finished(self):
 		self.screen.blit(self.gameover if not self.didiwin else self.winningscreen, (0,0))
@@ -159,12 +189,33 @@ class BoxesGame():
 		else:
 			alreadyplaced = False
 
-		if pygame.mouse.get_pressed()[0] and not alreadyplaced and not isoutofbounds:
+		if pygame.mouse.get_pressed()[0] and not alreadyplaced and not isoutofbounds and self.turn == True and self.justplaced <= 0:
 			if is_horizontal:
 				self.boardh[ypos][xpos] = True
 			else:
 				self.boardv[ypos][xpos] = True
 
+			self.Send({"action": "place", "x": xpos, "y": ypos, "is_horizontal": is_horizontal, "gameid": self.gameid, "num": self.num})
+
+			self.justplaced = 10
+
+	def Network_startgame(self, data):
+		self.running = True
+		self.num = data["player"]
+		self.gameid = data["gameid"]
+
+	def Network_place(self, data):
+		x = data["x"]
+		y = data["y"]
+		hv = data["is_horizontal"]
+		if hv:
+			self.boardh[y][x] = True
+		else:
+			self.boardv[y][x] = True
+
+	def Network_yourturn(self, data):
+		#torf = short for true or false
+		self.turn = data["torf"]
 
 bg = BoxesGame()
 while 1:
