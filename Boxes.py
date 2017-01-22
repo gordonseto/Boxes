@@ -217,6 +217,24 @@ class BoxesGame(ConnectionListener):
 		#torf = short for true or false
 		self.turn = data["torf"]
 
+	def Network_win(self, data):
+		self.owner[data["x"]][data["y"]] = "win"
+		self.boardh[data["y"]][data["x"]] = True
+		self.boardv[data["y"]][data["x"]] = True
+		self.boardh[data["y"]+1][data["x"]] = True
+		self.boardv[data["y"]][data["x"]+1] = True
+		#add one point to my score
+		self.me += 1
+
+	def Network_lose(self, data):
+		self.owner[data["x"]][data["y"]] = "lose"
+		self.boardh[data["y"]][data["x"]] = True
+		self.boardv[data["y"]][data["x"]] = True
+		self.boardh[data["y"]+1][data["x"]] = True
+		self.boardv[data["y"]][data["x"]+1] = True
+		#add one point to other players score
+		self.otherplayer += 1
+
 bg = BoxesGame()
 while 1:
 	bg.update()
